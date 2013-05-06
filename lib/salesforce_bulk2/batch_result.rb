@@ -1,42 +1,42 @@
+###
+# This guy acts like a glorified hash
+# Whatever is set is considered to be accessible as an attribute.
+# 
+# ie. 
+#   result['marko'] = 'polo'
+#   result.marko == 'polo'
+##
 module SalesforceBulk2
-  class BatchResult < Hash
-    def initialize(id, success, created, error)
-      self['id'] = id
-      self['success'] = success
-      self['created'] = created
-      self['error'] = error
+  class BatchResult
+    attr_reader :id
+    attr_reader :success
+    attr_reader :created
+    attr_reader :error
+
+    attr_accessor :request
+
+    def initialize(id, success, created, error = nil, request = nil)
+      @id = id
+      @success = (success == true)
+      @created = (created == true)
+      @error = error
+      @request = request
     end
     
     def error?
-      error.present?
+      @error.nil?
     end
     
     def created?
-      created
+      @created
     end
     
     def successful?
-      success
+      @success
     end
     
     def updated?
       !created && success
-    end
-
-    def method_missing method, *args, &block
-      if has_key? method.to_s
-        self[method.to_s] 
-      else
-        super method, *args, &block
-      end
-    end
-
-    def respond_to? method
-      if has_key? method.to_sym
-        return true
-      else
-        super
-      end
     end
   end
 end

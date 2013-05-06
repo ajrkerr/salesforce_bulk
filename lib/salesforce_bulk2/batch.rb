@@ -29,7 +29,6 @@ module SalesforceBulk2
       @batch_size || @@batch_size
     end
 
-
     def initialize job, data = nil
       @job = job
       @job_id = job.id
@@ -56,10 +55,9 @@ module SalesforceBulk2
     end
 
     def execute data
-      raise Exception.new "Already executed" if @data
+      raise Exception.new "Already executed" if executed?
 
       @data = data
-      body = data
       
       if data.is_a?(Array)
         raise ArgumentError, "Batch data set exceeds #{@@batch_size} record limit by #{data.length - @@batch_size}" if data.length > @@batch_size
@@ -72,6 +70,8 @@ module SalesforceBulk2
           item_values = keys.map { |key| item[key] }
           body += item_values.to_csv
         end
+      else 
+        body = data
       end
 
       # Despite the content for a query operation batch being plain text we 
@@ -93,21 +93,22 @@ module SalesforceBulk2
         result = XmlSimple.xml_in(response.body)
         
         if result['result'].present?
-          results = get_query_result(@id, result['result'].first)
-          
-          collection = QueryResultCollection.new(self, @id, result['result'].first, result['result'])
-          collection.replace(results)
+          data = extract_query_data(@id, result['result'].first)
+
+          #TODO
+          #Thar be dragons... I don't think that this be working at all.
+          collection = QueryResultCollection.new(@client, @job_id, @id, result['result'].first, result['result'])
+          collection.replace(data)
         end
 
       #Batch Result
       else
         results = BatchResultCollection.new
-        requests = get_request
+        request_data = get_request
         
         i = 0
         CSV.parse(response.body, :headers => true) do |row|
-          result = BatchResult.new(row[0], row[1].to_b, row[2].to_b, row[3])
-          result['request'] = requests[i]
+          result = BatchResult.new(row[0], row[1].to_b, row[2].to_b, row[3], request_data[i])
           results << result
 
           i += 1
@@ -117,21 +118,24 @@ module SalesforceBulk2
       end
     end
     
-    def get_query_result(batch_id, result_id)
+    ###
+    # Returns the results of a query
+    ##
+    def extract_query_data(batch_id, result_id)
+      # Request results of this batch from Salesforce as a CSV
       headers = {"Content-Type" => "text/csv; charset=UTF-8"}
       response = @client.http_get("job/#{@job_id}/batch/#{batch_id}/result/#{result_id}", headers)
+      result = []
       
+      #Extract header row
       lines = response.body.lines.to_a
       headers = CSV.parse_line(lines.shift).collect { |header| header.to_sym }
       
-      result = []
-      
-      #CSV.parse(lines.join, :headers => headers, :converters => [:all, lambda{|s| s.to_b if s.kind_of? String }]) do |row|
       CSV.parse(lines.join, :headers => headers) do |row|
         result << Hash[row.headers.zip(row.fields)]
       end
       
-      result
+      return result
     end
 
     def update(data)
@@ -150,6 +154,10 @@ module SalesforceBulk2
     end
 
     ### State Information ###
+    def executed? 
+      @data.nil?
+    end
+
     def in_progress?
       state? 'InProgress'
     end
@@ -167,7 +175,7 @@ module SalesforceBulk2
     end
     
     def finished?
-      completed? or finished?
+      completed? or failed?
     end
 
     def state?(value)
@@ -179,8 +187,7 @@ module SalesforceBulk2
     end
 
     def refresh
-      xml_data = @client.http_get_xml("job/#{@job_id}/batch/#{@batch_id}")
-      update(xml_data)
+      update @client.http_get_xml("job/#{@job_id}/batch/#{@batch_id}")
     end
   end
 end
