@@ -9,7 +9,7 @@ class TestInitialization < Test::Unit::TestCase
       :token => 'MySecurityToken'
     }
     
-    @client = SalesforceBulk::Client.new(@options)
+    @client = SalesforceBulk2::Client.new(@options)
   end
   
   test "initialization with default values" do
@@ -25,7 +25,7 @@ class TestInitialization < Test::Unit::TestCase
   test "initialization overriding all default values" do
     @options.merge!({:debugging => true, :host => 'newhost.salesforce.com', :version => 1.0})
     
-    client = SalesforceBulk::Client.new(@options)
+    client = SalesforceBulk2::Client.new(@options)
     
     assert_equal client.username, @options[:username]
     assert_equal client.password, "#{@options[:password]}#{@options[:token]}"
@@ -36,7 +36,7 @@ class TestInitialization < Test::Unit::TestCase
   end
   
   test "initialization with a YAML file" do
-    client = SalesforceBulk::Client.new(fixture_path('config.yml'))
+    client = SalesforceBulk2::Client.new(fixture_path('config.yml'))
     
     assert_equal client.username, 'MyUsername'
     assert_equal client.password, 'MyPasswordMySecurityToken'
@@ -48,7 +48,7 @@ class TestInitialization < Test::Unit::TestCase
   
   test "initialization with invalid key raises ArgumentError" do
     assert_raise ArgumentError do
-      SalesforceBulk::Client.new(:non_existing_key => '')
+      SalesforceBulk2::Client.new(:non_existing_key => '')
     end
   end
   

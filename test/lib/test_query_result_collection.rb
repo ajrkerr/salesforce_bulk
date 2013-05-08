@@ -9,16 +9,16 @@ class TestQueryResultCollection < Test::Unit::TestCase
       :token => "somelongtoken"
     }
     
-    @client = SalesforceBulk::Client.new(options)
+    @client = SalesforceBulk2::Client.new(options)
     @job_id = "123"
     @batch_id = "234"
     @result_ids = ["12","23","34"]
     @result_id = @result_ids[1]
-    @collection = SalesforceBulk::QueryResultCollection.new(@client, @job_id, @batch_id, @result_id, @result_ids)
+    @collection = SalesforceBulk2::QueryResultCollection.new(@client, @job_id, @batch_id, @result_id, @result_ids)
   end
   
   test "initilize using defaults" do
-    collection = SalesforceBulk::QueryResultCollection.new(@client, @job_id, @batch_id)
+    collection = SalesforceBulk2::QueryResultCollection.new(@client, @job_id, @batch_id)
     
     assert_equal collection.client, @client
     assert_equal collection.job_id, @job_id
@@ -54,7 +54,7 @@ class TestQueryResultCollection < Test::Unit::TestCase
     
     @collection.next
     
-    assert_kind_of SalesforceBulk::QueryResultCollection, @collection
+    assert_kind_of SalesforceBulk2::QueryResultCollection, @collection
     assert @collection.previous?
     assert !@collection.next?
     assert !@collection.next.any?
@@ -78,7 +78,7 @@ class TestQueryResultCollection < Test::Unit::TestCase
     
     @collection.previous
     
-    assert_kind_of SalesforceBulk::QueryResultCollection, @collection
+    assert_kind_of SalesforceBulk2::QueryResultCollection, @collection
     assert @collection.next?
     assert !@collection.previous?
     assert !@collection.previous.any?

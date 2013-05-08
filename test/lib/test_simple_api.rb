@@ -9,10 +9,10 @@ class TestSimpleApi < Test::Unit::TestCase
       :token => "somelongtoken"
     }
     
-    @client = SalesforceBulk::Client.new(options)
-    @job = SalesforceBulk::Job.new
+    @client = ::SalesforceBulk2::Client.new(options)
+    @job = ::SalesforceBulk2::Job.new
     @job.id = "123"
-    @batch = SalesforceBulk::Batch.new
+    @batch = ::SalesforceBulk2::Batch.new
     @batch.id = "456"
   end
   

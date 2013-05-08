@@ -27,7 +27,7 @@ To contribute, fork this repo, create a topic branch, make changes, then send a 
 
     require 'salesforce_bulk'
     
-    client = SalesforceBulk::Client.new(username: 'MyUsername', password: 'MyPassword', token: 'MySecurityToken')
+    client = SalesforceBulk2::Client.new(username: 'MyUsername', password: 'MyPassword', token: 'MySecurityToken')
     client.authenticate
 
 Optional keys include host (default: login.salesforce.com), version (default: 24.0) and debugging (default: false).
@@ -45,7 +45,7 @@ Then in a Ruby script:
 
     require 'salesforce_bulk'
     
-    client = SalesforceBulk::Client.new("config/salesforce_bulk.yml")
+    client = SalesforceBulk2::Client.new("config/salesforce_bulk.yml")
     client.authenticate
 
 ## Usage Examples

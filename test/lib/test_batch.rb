@@ -9,16 +9,16 @@ class TestBatch < Test::Unit::TestCase
       :token => "somelongtoken"
     }
     
-    @client = SalesforceBulk::Client.new(options)
+    @client = SalesforceBulk2::Client.new(options)
     bypass_authentication(@client)
-    @batch = SalesforceBulk::Batch.new
+    @batch = SalesforceBulk2::Batch.new
     @headers = {"Content-Type" => "text/csv; charset=UTF-8", 'X-Sfdc-Session' => '123456789'}
     @headersWithXml = {'Content-Type' => 'application/xml', 'X-Sfdc-Session' => '123456789'}
   end
   
   test "initialize from XML" do
     xml = fixture("batch_info_response.xml")
-    batch = SalesforceBulk::Batch.new_from_xml(XmlSimple.xml_in(xml, 'ForceArray' => false))
+    batch = SalesforceBulk2::Batch.new_from_xml(XmlSimple.xml_in(xml, 'ForceArray' => false))
     
     assert_equal batch.id, '751E00000004ZRbIAM'
     assert_equal batch.job_id, '750E00000004N97IAE'
@@ -124,7 +124,7 @@ class TestBatch < Test::Unit::TestCase
     assert_requested :get, "#{api_url(@client)}job/#{job_id}/batch", :headers => @headersWithXml, :times => 1
     
     assert_kind_of Array, batches
-    assert_kind_of SalesforceBulk::Batch, batches.first
+    assert_kind_of SalesforceBulk2::Batch, batches.first
     assert_equal batches.length, 2
     
     batch = batches.first
@@ -192,7 +192,7 @@ class TestBatch < Test::Unit::TestCase
     
     assert_requested :get, "#{api_url(@client)}job/#{job_id}/batch/#{batch_id}/result", :times => 1
     
-    assert_kind_of SalesforceBulk::BatchResultCollection, results
+    assert_kind_of SalesforceBulk2::BatchResultCollection, results
     assert_kind_of Array, results
     assert_equal results.length, 2
     assert_equal results.job_id, job_id
@@ -218,7 +218,7 @@ class TestBatch < Test::Unit::TestCase
     result = @client.batch_result(job_id, batch_id)
     
     assert_requested :get, "#{api_url(@client)}job/#{job_id}/batch/#{batch_id}/result", :headers => @headersWithXml, :times => 1
-    assert_kind_of SalesforceBulk::QueryResultCollection, result
+    assert_kind_of SalesforceBulk2::QueryResultCollection, result
     assert_equal result.job_id, job_id
     assert_equal result.batch_id, batch_id
     assert_equal result.result_id, result_id
@@ -250,7 +250,7 @@ class TestBatch < Test::Unit::TestCase
       .with(:headers => @headersWithXml)
       .to_return(:body => response, :status => 400)
     
-    assert_raise SalesforceBulk::SalesforceError do
+    assert_raise SalesforceBulk2::SalesforceError do
       @client.batch_result(job_id, batch_id)
     end
   end

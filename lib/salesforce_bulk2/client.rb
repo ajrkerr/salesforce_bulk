@@ -1,3 +1,8 @@
+# client.rb
+# Author: Adam Kerr <adam.kerr@zucora.com>
+# Date:   May 7th, 2013
+# Description: The connection and base interface for the Salesforce Bulk API
+
 module SalesforceBulk2
   # Interface for operating the Salesforce Bulk REST API
   class Client
@@ -23,14 +28,19 @@ module SalesforceBulk2
     attr_reader :version
 
     #List of jobs associatd with this client
-    attr_accessor :jobs
+    attr_reader :jobs
 
+    #Default batch size for any operation
+    attr_reader :batch_size
 
     # Defaults
-    @@host = 'login.salesforce.com'
-    @@version = 24.0
+    @@login_host = 'login.salesforce.com'
+    @@version = 27.0
     @@debugging = false
     @@api_path_prefix = "/services/async/"
+    @@timeout = 2
+    @@batch_size = 10000
+
 
     def initialize options
       if options.is_a?(String)
@@ -38,16 +48,16 @@ module SalesforceBulk2
         options.symbolize_keys!
       end
 
-      options.assert_valid_keys(:username, :password, :token, :debugging, :host, :version)
+      @username   = options[:username]
+      @password   = "#{options[:password]}#{options[:token]}"
+      @token      = options[:token]       || ''
+      @login_host = options[:login_host]  || @@login_host
+      @version    = options[:version]     || @@version
+      @timeout    = options[:timeout]     || @@timeout
+      @debugging  = options[:debugging]   || @@debugging
+      @batch_size = options[:batch_size]  || @@batch_size
 
-      @username = options[:username]
-      @password = "#{options[:password]}#{options[:token]}"
-      @token    = options[:token] || ''
-      @host     = options[:host] || @@host
-      @version  = options[:version] || @@version
-      @debugging = options[:debugging] || @@debugging
-
-      @jobs = []
+      @jobs = JobCollection.new
     end
 
     def connect options = {}
@@ -74,9 +84,8 @@ module SalesforceBulk2
 
       @session_id = result['sessionId']
       @server_url = result['serverUrl']
-      @instance_id = instance_id(@server_url)
+      @instance_id = get_instance_id(@server_url)
       @instance_host = "#{@instance_id}.salesforce.com"
-
       @api_path_prefix = "#{@@api_path_prefix}/#{@version}/"
 
       result
@@ -110,33 +119,31 @@ module SalesforceBulk2
     def http_post(path, body, headers={})
       headers = {'Content-Type' => 'application/xml'}.merge(headers)
 
-      #Are we connected?
       if connected?
+        #Set session ID and prefix the path for our request
         headers['X-SFDC-Session'] = @session_id
         host = @instance_host
         path = "#{@api_path_prefix}#{path}"
       else
-        host = @host
+        #We are trying to login, so don't set anything else
+        host = @login_host
       end
 
       response = https_request(host).post(path, body, headers)
-
-      if response.is_a?(Net::HTTPSuccess)
-        response
-      else
-        raise SalesforceError.new(response)
-      end
+      verify_response(response)
     end
 
     def http_get(path, headers={})
       path = "#{@api_path_prefix}#{path}"
 
       headers = {'Content-Type' => 'application/xml'}.merge(headers)
-
       headers['X-SFDC-Session'] = @session_id if @session_id
 
       response = https_request(@instance_host).get(path, headers)
+      verify_response(response)
+    end
 
+    def verify_response(response)
       if response.is_a?(Net::HTTPSuccess)
         response
       else
@@ -159,66 +166,79 @@ module SalesforceBulk2
       req
     end
 
-    def instance_id(url)
-      url.match(/:\/\/([a-zA-Z0-9-]{2,}).salesforce/)[1]
-    end
-
+    
 
     #Job related
-    def new_job options = {}
+    def create_job options = {}
       job = Job.create(self, options)
       @jobs << job
-      job
+
+      return job
     end
 
     def find_job id
-      job = Job.find(self, id)
-      @jobs << job
-      job
+      return Job.find(self, id)
     end
 
     def close_jobs
-      @jobs.map(&:close)
+      @jobs.close
+      return @jobs
     end
 
     def abort_jobs
-      @jobs.map(&:abort)
+      @jobs.abort
+      return @jobs
     end
 
 
     ## Operations
-    def delete(sobject, data, batch_size = nil)
-      perform_operation(:delete, sobject, data, :batch_size => nil)
+    def delete(sobject, data, options = {})
+      perform_operation(:delete, sobject, data, options)
     end
 
-    def insert(sobject, data, batch_size = nil)
-      perform_operation(:insert, sobject, data, :batch_size => nil)
+    def insert(sobject, data, options = {})
+      perform_operation(:insert, sobject, data, options)
     end
 
-    def query(sobject, data, batch_size = nil)
-      perform_operation(:query, sobject, data, :batch_size => nil)
+    def query(sobject, data, options = {})
+      perform_operation(:query, sobject, data, options)
     end
 
-    def update(sobject, data, batch_size = nil)
-      perform_operation(:update, sobject, data, :batch_size => nil)
+    def update(sobject, data, options = {})
+      perform_operation(:update, sobject, data, options)
     end
 
-    def upsert(sobject, data, external_id, batch_size = nil)
-      perform_operation(:upsert, sobject, data, :external_id => external_id, :batch_size => batch_size)
+    def upsert(sobject, data, external_id, options = {})
+      options.merge!(external_id: external_id)
+
+      perform_operation(:upsert, sobject, data, options)
     end
 
     def perform_operation(operation, sobject, data, options = {})
-      job = new_job(operation: operation, object: sobject, :external_id => options[:external_id])
+      {
+        operation: operation,
+        object: sobject,
+      }.merge(options)
 
-      job.add_data(data, options[:batch_size])
+      job = Job.new(self, options)
+      (operation: operation, object: sobject, external_id: options[:external_id])
+
+      batch_size = options[:batch_size] || self.batch_size
+
+      job.add_data(data)
       job.close
 
       until job.finished?
         job.refresh
-        sleep 2
+        sleep @timeout
       end
 
       return job.get_results
+    end
+
+  private
+    def get_instance_id(url)
+      url.match(/:\/\/([a-zA-Z0-9-]{2,}).salesforce/)[1]
     end
   end
 end

@@ -9,8 +9,8 @@ class TestJob < Test::Unit::TestCase
       :token => "somelongtoken"
     }
     
-    @client = SalesforceBulk::Client.new(options)
-    @job = SalesforceBulk::Job.new
+    @client = SalesforceBulk2::Client.new(options)
+    @job = SalesforceBulk2::Job.new
     @headers = {'Content-Type' => 'application/xml', 'X-Sfdc-Session' => '123456789'}
     
     bypass_authentication(@client)
@@ -18,7 +18,7 @@ class TestJob < Test::Unit::TestCase
   
   test "initialization from XML" do
     xml = fixture("job_info_response.xml")
-    job = SalesforceBulk::Job.new_from_xml(XmlSimple.xml_in(xml, 'ForceArray' => false))
+    job = SalesforceBulk2::Job.new_from_xml(XmlSimple.xml_in(xml, 'ForceArray' => false))
     
     assert_equal job.id, '750E00000004N1mIAE'
     assert_equal job.operation, 'upsert' 
@@ -248,7 +248,7 @@ class TestJob < Test::Unit::TestCase
     
     stub_request(:post, "#{api_url(@client)}job").to_return(:body => response, :status => 500)
     
-    assert_raise SalesforceBulk::SalesforceError do
+    assert_raise SalesforceBulk2::SalesforceError do
       job = @client.add_job(:upsert, :SomeNonExistingObject__c, :external_id => :Id__c)
     end
   end

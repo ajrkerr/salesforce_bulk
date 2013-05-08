@@ -12,10 +12,10 @@ task :default => :test
 
 namespace :doc do
   require 'rdoc/task'
-  require File.expand_path('../lib/salesforce_bulk/version', __FILE__)
+  require File.expand_path('../lib/salesforce_bulk2/version', __FILE__)
   RDoc::Task.new do |rdoc|
     rdoc.rdoc_dir = 'rdoc'
-    rdoc.title = "SalesforceBulk #{SalesforceBulk::VERSION}"
+    rdoc.title = "SalesforceBulk #{SalesforceBulk2::VERSION}"
     rdoc.main = 'README.md'
     rdoc.rdoc_files.include('README.md', 'LICENSE.md', 'lib/**/*.rb')
   end

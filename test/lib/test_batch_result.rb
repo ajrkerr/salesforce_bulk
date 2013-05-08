@@ -3,9 +3,9 @@ require 'test_helper'
 class TestBatchResult < Test::Unit::TestCase
   
   def setup
-    @result_created = SalesforceBulk::BatchResult.new('123', true, true, '')
-    @result_updated = SalesforceBulk::BatchResult.new('123', true, false, '')
-    @result_failed = SalesforceBulk::BatchResult.new('123', false, false, 'Some Error Message This Is')
+    @result_created = SalesforceBulk2::BatchResult.new('123', true, true, '')
+    @result_updated = SalesforceBulk2::BatchResult.new('123', true, false, '')
+    @result_failed = SalesforceBulk2::BatchResult.new('123', false, false, 'Some Error Message This Is')
   end
   
   test "basic initialization" do
@@ -20,7 +20,7 @@ class TestBatchResult < Test::Unit::TestCase
   end
   
   test "initialization from CSV row" do
-    #@br = SalesforceBulk::BatchResult.new_from_csv()
+    #@br = SalesforceBulk2::BatchResult.new_from_csv()
   end
   
   test "error?" do
