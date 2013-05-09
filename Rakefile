@@ -1,6 +1,9 @@
 require 'bundler'
 Bundler::GemHelper.install_tasks
 
+
+##
+# Default test task
 require 'rake/testtask'
 Rake::TestTask.new(:test) do |test|
   test.libs << 'lib' << 'test'
@@ -10,6 +13,9 @@ end
 
 task :default => :test
 
+
+##
+# Generate Documentation
 namespace :doc do
   require 'rdoc/task'
   require File.expand_path('../lib/salesforce_bulk2/version', __FILE__)

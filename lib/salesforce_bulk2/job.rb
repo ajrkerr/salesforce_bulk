@@ -41,15 +41,21 @@ module SalesforceBulk2
 
     ##
     # Verify a concurrency mode is valid
-    def self.valid_concurrency_mode? mode
+    def self.valid_concurrency_mode? concurrency_mode
       @@valid_concurrency_modes.include?(concurrency_mode)
+    end
+
+    ##
+    # Verify the content type is valid
+    def self.valid_content_type? content_type
+      @@valid_content_types.include?(content_type)
     end
 
     ##
     # Creates a new job object
     def self.create client, options = {}
       sobject = options[:sobject]
-      operation = options[:operation].to_sym.downcase
+      operation = options[:operation].to_sym.downcase if options[:operation]
       external_id = options[:external_id]
       content_type = options[:content_type]
       concurrency_mode = options[:concurrency_mode]
@@ -65,7 +71,7 @@ module SalesforceBulk2
       end
 
       # Verify the content type is valid
-      if !Job.valid_content_type?(content_type)
+      if content_type and !Job.valid_content_type?(content_type)
         raise ArgumentError.new("Invalid content type: #{content_type}")
       end
 
@@ -80,7 +86,7 @@ module SalesforceBulk2
       xml += "  <contentType>XML</contentType>" if content_type == :xml
       xml += "</jobInfo>"
 
-      job_info = Envelopes::Envelopes::JobInfo.new client.http_post_xml("job", xml)
+      job_info = Envelopes::JobInfo.new client.http_post_xml("job", xml)
       
       return Job.new(client, job_info, options)
     end
@@ -299,8 +305,11 @@ module SalesforceBulk2
     ##
     # Delegate methods to job_info
     def method_missing method, *args, &block
-      @job_info.send(method, *args, &block) or
-      super
+      if @job_info.respond_to?(method)
+        @job_info.send(method, *args, &block)
+      else
+        super
+      end
     end
 
     ##

@@ -3,7 +3,7 @@ require 'test_helper'
 class TestBatchResult < Test::Unit::TestCase
   
   def setup
-    @result_created = SalesforceBulk2::BatchResult.new('123', true, true, '')
+    @result_created = SalesforceBulk2::BatchResult.new('123', true, true)
     @result_updated = SalesforceBulk2::BatchResult.new('123', true, false, '')
     @result_failed = SalesforceBulk2::BatchResult.new('123', false, false, 'Some Error Message This Is')
   end

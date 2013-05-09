@@ -30,19 +30,19 @@ module SalesforceBulk2
         @xml_data                   = xml_data
 
         # Map the standard values
-        @id                         = data['id']
-        @job_id                     = data['jobId']
-        @state                      = data['state']
-        @state_message              = data['stateMessage']
+        @id                         = xml_data['id']
+        @job_id                     = xml_data['jobId']
+        @state                      = xml_data['state']
+        @state_message              = xml_data['stateMessage']
 
-        @created_date               = DateTime.parse(data['createdDate'])
-        @system_modstamp            = DateTime.parse(data['systemModstamp']) rescue nil
+        @created_date               = DateTime.parse(xml_data['createdDate'])
+        @system_modstamp            = DateTime.parse(xml_data['systemModstamp']) rescue nil
         
-        @apex_processing_time       = data['apexProcessingTime'].to_i
-        @api_active_processing_time = data['apiActiveProcessingTime'].to_i
-        @number_records_failed      = data['numberRecordsFailed'].to_i
-        @number_records_processed   = data['numberRecordsProcessed'].to_i
-        @total_processing_time      = data['totalProcessingTime'].to_i
+        @apex_processing_time       = xml_data['apexProcessingTime'].to_i
+        @api_active_processing_time = xml_data['apiActiveProcessingTime'].to_i
+        @number_records_failed      = xml_data['numberRecordsFailed'].to_i
+        @number_records_processed   = xml_data['numberRecordsProcessed'].to_i
+        @total_processing_time      = xml_data['totalProcessingTime'].to_i
       end
     end
   end

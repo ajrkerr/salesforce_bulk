@@ -10,10 +10,15 @@ class TestJob < Test::Unit::TestCase
     }
     
     @client = SalesforceBulk2::Client.new(options)
-    @job = SalesforceBulk2::Job.new
     @headers = {'Content-Type' => 'application/xml', 'X-Sfdc-Session' => '123456789'}
     
     bypass_authentication(@client)
+
+    @job_info = ::SalesforceBulk2::Envelopes::JobInfo.new(xml_fixture("job_info_response.xml"))
+    @batch_info = ::SalesforceBulk2::Envelopes::BatchInfo.new(xml_fixture("batch_info_response.xml"))
+    
+    @job = ::SalesforceBulk2::Job.new(@client, @job_info)
+    @batch = ::SalesforceBulk2::Batch.new(@job, @batch_info)
   end
   
   test "initialization from XML" do
@@ -41,41 +46,41 @@ class TestJob < Test::Unit::TestCase
     assert_equal job.api_active_processing_time, 0
     assert_equal job.apex_processing_time, 0
     assert_equal job.total_processing_time, 0
-    assert_equal job.api_version, 24.0
+    assert_equal job.api_version, 27.0
   end
   
   test "state?" do
-    @job.state = 'Closed'
+    @job_info.instance_variable_set('@state', 'Closed')
     assert @job.state?('closed')
     
-    @job.state = 'Closed'
+    @job_info.instance_variable_set('@state', 'Closed')
     assert @job.state?('CLOSED')
     
-    @job.state = nil
+    @job_info.instance_variable_set('@state', nil)
     assert !@job.state?('closed')
   end
   
   test "aborted?" do
-    @job.state = 'Aborted'
+    @job_info.instance_variable_set('@state', 'Aborted')
     assert @job.aborted?
     
-    @job.state = nil
+    @job_info.instance_variable_set('@state', nil)
     assert !@job.aborted?
   end
   
   test "closed?" do
-    @job.state = 'Closed'
+    @job_info.instance_variable_set('@state', 'Closed')
     assert @job.closed?
     
-    @job.state = nil
+    @job_info.instance_variable_set('@state', nil)
     assert !@job.closed?
   end
   
   test "open?" do
-    @job.state = 'Open'
+    @job_info.instance_variable_set('@state', 'Open')
     assert @job.open?
     
-    @job.state = nil
+    @job_info.instance_variable_set('@state', nil)
     assert !@job.open?
   end
   
@@ -112,7 +117,7 @@ class TestJob < Test::Unit::TestCase
     assert_equal job.api_active_processing_time, 0
     assert_equal job.apex_processing_time, 0
     assert_equal job.total_processing_time, 0
-    assert_equal job.api_version, 24.0
+    assert_equal job.api_version, 27.0
   end
   
   test "add_job raises ArgumentError if provided with invalid operation" do
@@ -167,7 +172,7 @@ class TestJob < Test::Unit::TestCase
     assert_equal job.api_active_processing_time, 0
     assert_equal job.apex_processing_time, 0
     assert_equal job.total_processing_time, 0
-    assert_equal job.api_version, 24.0
+    assert_equal job.api_version, 27.0
   end
   
   test "should abort job and return successful response" do
@@ -204,7 +209,7 @@ class TestJob < Test::Unit::TestCase
     assert_equal job.api_active_processing_time, 0
     assert_equal job.apex_processing_time, 0
     assert_equal job.total_processing_time, 0
-    assert_equal job.api_version, 24.0
+    assert_equal job.api_version, 27.0
   end
   
   test "should return job info" do
@@ -240,7 +245,7 @@ class TestJob < Test::Unit::TestCase
     assert_equal job.api_active_processing_time, 0
     assert_equal job.apex_processing_time, 0
     assert_equal job.total_processing_time, 0
-    assert_equal job.api_version, 24.0
+    assert_equal job.api_version, 27.0
   end
   
   test "should raise SalesforceError on invalid job" do

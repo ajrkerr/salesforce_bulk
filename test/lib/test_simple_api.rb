@@ -3,19 +3,24 @@ require 'test_helper'
 class TestSimpleApi < Test::Unit::TestCase
   
   def setup
+    ## Required parameters for client
     options = {
       :username => 'myusername', 
-      :password => 'mypassword',
-      :token => "somelongtoken"
+      :password => 'mypassword'
     }
     
     # Create objects
     @client = ::SalesforceBulk2::Client.new(options)
+    bypass_authentication(@client)
+    
     @job_info = ::SalesforceBulk2::Envelopes::JobInfo.new(xml_fixture("job_info_response.xml"))
+    @batch_info = ::SalesforceBulk2::Envelopes::BatchInfo.new(xml_fixture("batch_info_response.xml"))
+    
     @job = ::SalesforceBulk2::Job.new(@client, @job_info)
-    @job.id = "123"
-    @batch = ::SalesforceBulk2::Batch.new
-    @batch.id = "456"
+    @batch = ::SalesforceBulk2::Batch.new(@job, @batch_info)
+    
+    # @job.id = "123"
+    # @batch.id = "456"
   end
   
   test "delete" do

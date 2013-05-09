@@ -30,7 +30,7 @@ To contribute, fork this repo, create a topic branch, make changes, then send a 
     client = SalesforceBulk2::Client.new(username: 'MyUsername', password: 'MyPassword', token: 'MySecurityToken')
     client.authenticate
 
-Optional keys include host (default: login.salesforce.com), version (default: 24.0) and debugging (default: false).
+Optional keys include host (default: login.salesforce.com), version (default: 27.0) and debugging (default: false).
 
 ### Configuring from a YAML file
 

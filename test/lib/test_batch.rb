@@ -11,7 +11,13 @@ class TestBatch < Test::Unit::TestCase
     
     @client = SalesforceBulk2::Client.new(options)
     bypass_authentication(@client)
-    @batch = SalesforceBulk2::Batch.new
+    
+    @job_info = ::SalesforceBulk2::Envelopes::JobInfo.new(xml_fixture("job_info_response.xml"))
+    @batch_info = ::SalesforceBulk2::Envelopes::BatchInfo.new(xml_fixture("batch_info_response.xml"))
+    
+    @job = ::SalesforceBulk2::Job.new(@client, @job_info)
+    @batch = ::SalesforceBulk2::Batch.new(@job, @batch_info)
+
     @headers = {"Content-Type" => "text/csv; charset=UTF-8", 'X-Sfdc-Session' => '123456789'}
     @headersWithXml = {'Content-Type' => 'application/xml', 'X-Sfdc-Session' => '123456789'}
   end

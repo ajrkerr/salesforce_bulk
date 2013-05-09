@@ -5,3 +5,4 @@ token: MySecurityToken
 debugging: true
 host: myhost.mydomain.com
 version: 88.0
+port: 12345

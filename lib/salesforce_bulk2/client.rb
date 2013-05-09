@@ -5,9 +5,6 @@
 module SalesforceBulk2
   # Interface for operating the Salesforce Bulk REST API
   class Client
-    # If true, print API debugging information to stdout. Defaults to false.
-    attr_accessor :debugging
-
     # The host to use for authentication. Defaults to login.salesforce.com.
     attr_reader :login_host
 
@@ -44,7 +41,6 @@ module SalesforceBulk2
     # Defaults
     @@login_host = 'login.salesforce.com'
     @@version = 27.0
-    @@debugging = false
     @@api_path_prefix = "/services/async/"
     @@timeout = 2
     @@batch_size = 10000
@@ -54,7 +50,6 @@ module SalesforceBulk2
     @@header = {
       'Content-Type' => 'application/xml'
     }
-
 
     ##
     # Creates a new client
@@ -76,12 +71,11 @@ module SalesforceBulk2
       @login_host = options[:login_host]  || @@login_host
       @version    = options[:version]     || @@version
       @timeout    = options[:timeout]     || @@timeout
-      @debugging  = options[:debugging]   || @@debugging
       @batch_size = options[:batch_size]  || @@batch_size
       @port       = options[:port]        || @@port
       @enable_ssl = options[:enable_ssl]  || @@enable_ssl
       @verify_certificate = options[:verify_certificate] || @@verify_certificate
-      @default_header = @@header.merge(options[:header] || {})
+      @default_header = @@header.merge(options[:header]  || {})
 
       # List of all created jobs
       @jobs = JobCollection.new
@@ -93,7 +87,7 @@ module SalesforceBulk2
       ## Allows 
       @username = options[:username] || @username
       @password = options[:password] || @password
-      @version  = options[:version] || @version
+      @version  = options[:version]  || @version
 
       # Construct SOAP login request
       xml  = '<?xml version="1.0" encoding="utf-8"?>'
@@ -176,7 +170,7 @@ module SalesforceBulk2
     def http_post path, body, header_options = {}
       # Verify we are logged in first
       if !connected?
-        raise NotLoggedInErorr "Please login before making any requests"
+        raise Errors::NotLoggedInError.new "Please login before making any requests"
       end
 
       # Construct path and header
@@ -195,7 +189,7 @@ module SalesforceBulk2
     def http_get path, header_options = {}
       # Verify we are logged in first
       if !connected?
-        raise NotLoggedInErorr "Please login before making any requests"
+        raise Errors::NotLoggedInError.new "Please login before making any requests"
       end
 
       # Construct path and header
@@ -297,9 +291,9 @@ module SalesforceBulk2
     ##
     # Query for objects
     def query sobject, query, options = {}
-      options.merge({
+      options.merge!({
         operation: :query,
-        object: sobject
+        sobject: sobject
       })
 
       job = Job.create(self, options)
@@ -318,9 +312,9 @@ module SalesforceBulk2
     ## 
     # Performs the operation specified
     def perform_operation operation, sobject, data, options = {}
-      options.merge({
+      options.merge!({
         operation: operation,
-        object: sobject
+        sobject: sobject
       })
 
       job = Job.create(self, options)
@@ -343,7 +337,7 @@ module SalesforceBulk2
   private
     ##
     # Returns the constructed path
-    def bulid_path path
+    def build_path path
       "#{@api_path_prefix}#{path}"
     end
 
@@ -359,6 +353,10 @@ module SalesforceBulk2
       req = Net::HTTP.new(host, @port)
       req.use_ssl = true if @enable_ssl
       req.verify_mode = OpenSSL::SSL::VERIFY_NONE unless @verify_certificate
+
+      ::SalesforceBulk2.logger.debug {"Connecting to #{host}:#{@port}"}
+      ::SalesforceBulk2.logger.debug {"Request: #{req.inspect}"}
+      
       req
     end
 
@@ -383,7 +381,7 @@ module SalesforceBulk2
         return true
       else
         # Return Salesforce error message
-        raise SalesforceError.new(response)
+        raise Errors::SalesforceError.new(response)
       end
     end
   end
