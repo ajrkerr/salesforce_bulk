@@ -9,8 +9,10 @@ class TestSimpleApi < Test::Unit::TestCase
       :token => "somelongtoken"
     }
     
+    # Create objects
     @client = ::SalesforceBulk2::Client.new(options)
-    @job = ::SalesforceBulk2::Job.new
+    @job_info = ::SalesforceBulk2::Envelopes::JobInfo.new(xml_fixture("job_info_response.xml"))
+    @job = ::SalesforceBulk2::Job.new(@client, @job_info)
     @job.id = "123"
     @batch = ::SalesforceBulk2::Batch.new
     @batch.id = "456"

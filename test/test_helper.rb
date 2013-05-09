@@ -1,20 +1,35 @@
 require 'rubygems'
+
+#Test Frameworks
 require 'test/unit'
 require 'shoulda'
-require 'mocha'
-require 'webmock/test_unit'
-require 'salesforce_bulk2'
 
+#Object/Web Mocking
+require 'mocha/setup'
+require 'webmock/test_unit'
+
+#Testing Coverage
+require 'simplecov'
+
+#Our Libraries
+require 'salesforce_bulk2'
+require 'xmlsimple'
+
+
+# Helper Methods
 class Test::Unit::TestCase
   
   def self.test(name, &block)
     define_method("test #{name.inspect}", &block)
   end
   
+
   def api_url(client)
     "https://#{client.host}/services/async/#{client.version}/"
   end
   
+  ##
+  # Bypass Client Authentication requirement for testing
   def bypass_authentication(client)
     client.instance_variable_set('@session_id', '123456789')
     client.instance_variable_set('@host', 'na9.salesforce.com')
@@ -25,8 +40,15 @@ class Test::Unit::TestCase
     File.expand_path("../fixtures/#{file}", __FILE__)
   end
   
+  ##
+  # Read a file in as a string
   def fixture(file)
     File.new(fixture_path(file)).read
   end
-  
+
+  ##
+  # Returns parsed XML
+  def xml_fixture(file)
+    XmlSimple.xml_in(fixture(file), :ForceArray => false)
+  end
 end

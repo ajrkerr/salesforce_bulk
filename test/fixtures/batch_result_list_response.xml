@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results xmlns="http://www.force.com/2009/06/asyncapi/dataload">
+  <result>
+    <id>001D000000ISUr3IAH</id><success>true</success><created>true</created>
+  </result>
+  <result>
+    <id>001D000000ISUr4IAH</id><success>true</success><created>true</created>
+  </result>
+  <result>
+    <success>false</success><created>false</created><error>REQUIRED_FIELD_MISSING:Required fields are missing:
+[LastName]:LastName --</error>
+  </result>
+</results>

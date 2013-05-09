@@ -53,7 +53,7 @@ class TestInitialization < Test::Unit::TestCase
   end
   
   test "authentication" do
-    headers = {'Content-Type' => 'text/xml', 'SOAPAction' => 'login'}
+    headers = {'Content-Type' => 'application/xml', 'SOAPAction' => 'login'}
     request = fixture("login_request.xml")
     response = fixture("login_response.xml")
     

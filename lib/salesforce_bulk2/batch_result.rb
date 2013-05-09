@@ -1,93 +1,101 @@
-###
-# This guy acts like a glorified hash
-# Whatever is set is considered to be accessible as an attribute.
-# 
-# ie. 
-#   result['marko'] = 'polo'
-#   result.marko == 'polo'
 ##
+# Provides an interface for Salesforce's BatchResult.  
+# Contains BatchResultRecords.
+# Author:: Adam Kerr <adam.kerr@zucora.com>
+#
+
 module SalesforceBulk2
-  class BatchResult
-    attr_reader :id
-    attr_reader :success
-    attr_reader :created
-    attr_reader :error
+  class BatchResult < Array
 
-    attr_accessor :request
+    attr_reader :batch
+    attr_reader :batch_id
+    attr_reader :job
+    attr_reader :job_id
+    attr_reader :client
+    attr_reader :content_type
 
-    def initialize(id, success, created, error = nil, request = nil)
-      @id = id
-      @success = (success == true)
-      @created = (created == true)
-      @error = error
-      @request = request
+    ##
+    # List of all filter methods
+    @@filters = %w{error created successful updated}
+
+    ##
+    # Create a list of filter methods on the collection. 
+    # Same as creating methods like:
+    # def updated
+    #   select do |result|
+    #     result.updated?
+    #   end
+    # end
+    #
+    # +Examples+
+    # collection.queued => returns all queued results
+    # collection.completed => returns all completed results
+    #
+    class << self
+      @@filters.each do |filter|
+        define_method filter.to_sym do
+          select do |batch|
+            batch.send("#{filter}?")
+          end
+        end
+      end
     end
-    
-    def error?
-      @error.nil?
+
+
+    ##
+    # Creates a new results object
+    def initialize batch
+      @batch = batch
+      @batch_id = batch.id
+      
+      @job = batch.job
+      @job_id = batch.job_id
+
+      @client = batch.client
+      @content_type = batch.content_type
     end
-    
-    def created?
-      @created
+
+    ##
+    # Refresh the results from the server
+    def refresh
+      # Grab the updated information
+      result = @client.http_get("job/#{@job_id}/batch/#{@batch_id}/result")
+      
+      # Parse results according to content type
+      case content_type
+      when :csv
+        #Parse as a CSV file
+        CSV.parse(result.body, :headers => true) do |record|
+          self << BatchResultRecord.new(record[0], record[1], record[2], record[3])
+        end
+
+      when :xml
+        #TODO Should probably test or verify this or something
+        
+        #Parse as XML
+        XmlSimple.xml_in(result.body).each do |record|
+          self << BatchResultRecord.new(record[:id], record[:success], record[:created], record[:error])
+        end
+
+      else
+        raise ArgumentError "Invalid content type"
+      end
+
+      return true
     end
-    
-    def successful?
-      @success
+
+    ##
+    # Finds the result associated with the batch
+    def self.find batch
+      result = BatchResult.new batch
+      result.refresh
+      return result
     end
-    
-    def updated?
-      !created && success
+
+    ##
+    # True if any records failed
+    def any_failures?
+      self.any? { |result| result.error? }
     end
   end
 end
-    ###
-    # Returns the results of a query
-    ##
-    # def extract_query_data(batch_id, result_id)
-    #   # Request results of this batch from Salesforce as a CSV
-    #   headers = {"Content-Type" => "text/csv; charset=UTF-8"}
-    #   response = @client.http_get("job/#{@job_id}/batch/#{batch_id}/result/#{result_id}", headers)
-    #   result = []
-      
-    #   #Extract header row
-    #   lines = response.body.lines.to_a
-    #   headers = CSV.parse_line(lines.shift).collect { |header| header.to_sym }
-      
-    #   CSV.parse(lines.join, :headers => headers) do |row|
-    #     result << Hash[row.headers.zip(row.fields)]
-    #   end
-      
-    #   return result
-    # end
-    
-
-      # response = @client.http_get("job/#{@job_id}/batch/#{@id}/result")
-
-      # #Query Result
-      # if response.body =~ /<.*?>/m
-      #   result = XmlSimple.xml_in(response.body)
-        
-      #   if result['result'].present?
-      #     data = extract_query_data(@id, result['result'].first)
-
-      #     #TODO
-      #     #Thar be dragons... I don't think that this be working at all.
-      #     collection = QueryResultCollection.new(@client, @job_id, @id, result['result'].first, result['result'])
-      #     collection.replace(data)
-      #   end
-
-      # #Batch Result
-      # else
-      #   results = BatchResultCollection.new
-      #   request_data = get_request
-        
-      #   i = 0
-      #   CSV.parse(response.body, :headers => true) do |row|
-      #     result = BatchResult.new(row[0], row[1].to_b, row[2].to_b, row[3], request_data[i])
-      #     results << result
-
-      #     i += 1
-      #   end
-        
-      #   return results
-      # end
